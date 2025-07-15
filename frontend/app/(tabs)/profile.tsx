@@ -26,7 +26,7 @@ export default function ProfileScreen() {
           style: 'destructive', 
           onPress: async () => {
             await signOut();
-            router.replace('/');
+            // Navigation is handled automatically by AuthContext
           }
         }
       ]
@@ -125,7 +125,7 @@ export default function ProfileScreen() {
             <User size={32} color="#ffffff" />
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.full_name}</Text>
+            <Text style={styles.userName}>{user?.name}</Text>
             <Text style={styles.userEmail}>{user?.email}</Text>
             {user?.phone && (
               <Text style={styles.userPhone}>{user.phone}</Text>

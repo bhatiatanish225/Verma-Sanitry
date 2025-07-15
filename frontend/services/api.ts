@@ -62,6 +62,35 @@ function formatResponse<T>(promise: Promise<any>): Promise<ApiResponse<T>> {
 // Current user state will be managed by auth context, not here
 
 export const authService = {
+  // Multi-step signup endpoints
+  async signupStep1(userData: {
+    name: string;
+    email: string;
+    phone: string;
+  }): Promise<ApiResponse<{ message: string; code?: string }>> {
+    return formatResponse<{ message: string; code?: string }>(api.post('/api/auth/signup/step1', userData));
+  },
+
+  async signupStep2(email: string, otp: string): Promise<ApiResponse<{ message: string }>> {
+    return formatResponse<{ message: string }>(api.post('/api/auth/signup/step2', { email, otp }));
+  },
+
+  async signupStep3(userData: {
+    email: string;
+    password: string;
+    city: string;
+  }): Promise<ApiResponse<AuthResponse>> {
+    const response = await formatResponse<AuthResponse>(api.post('/api/auth/signup/step3', userData));
+    
+    // Store token if registration is successful
+    if (response.success && response.data?.token) {
+      await storeToken(response.data.token);
+    }
+    
+    return response;
+  },
+
+  // Existing endpoints for backward compatibility
   async sendOTP(email: string): Promise<ApiResponse<{ message: string; code?: string }>> {
     return formatResponse<{ message: string; code?: string }>(api.post('/api/auth/send-code', { email }));
   },

@@ -8,6 +8,11 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAdmin: boolean;
+  // Multi-step signup functions
+  signupStep1: (userData: { name: string; email: string; phone: string }) => Promise<{ error: any; code?: string }>;
+  signupStep2: (email: string, otp: string) => Promise<{ error: any }>;
+  signupStep3: (userData: { email: string; password: string; city: string }) => Promise<{ error: any }>;
+  // Existing functions for backward compatibility
   signUp: (email: string, password: string, fullName: string, phone?: string, city?: string, code?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -31,11 +36,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Navigate when user changes
   useEffect(() => {
-    if (user && !isLoading) {
-      if (user.role === 'admin') {
-        router.replace('/(admin)');
+    if (!isLoading) {
+      if (user) {
+        if (user.role === 'admin') {
+          router.replace('/(admin)');
+        } else {
+          router.replace('/(tabs)');
+        }
       } else {
-        router.replace('/(tabs)');
+        // User is null (logged out), navigate to welcome screen
+        router.replace('/');
       }
     }
   }, [user, isLoading]);
@@ -85,6 +95,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       return { error };
+    }
+  };
+
+  // Multi-step signup functions
+  const signupStep1 = async (userData: { name: string; email: string; phone: string }) => {
+    try {
+      const response = await authService.signupStep1(userData);
+      if (response.success) {
+        return { error: null, code: response.data?.code };
+      } else {
+        return { error: { message: response.error } };
+      }
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  const signupStep2 = async (email: string, otp: string) => {
+    try {
+      const response = await authService.signupStep2(email, otp);
+      if (response.success) {
+        return { error: null };
+      } else {
+        return { error: { message: response.error } };
+      }
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  const signupStep3 = async (userData: { email: string; password: string; city: string }) => {
+    try {
+      setIsLoading(true);
+      
+      const response = await authService.signupStep3(userData);
+      if (response.success && response.data) {
+        setUser(response.data.user);
+        return { error: null };
+      } else {
+        return { error: { message: response.error } };
+      }
+    } catch (error) {
+      return { error };
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -166,6 +221,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       isLoading,
       isAdmin,
+      signupStep1,
+      signupStep2,
+      signupStep3,
       signUp,
       signIn,
       signOut,

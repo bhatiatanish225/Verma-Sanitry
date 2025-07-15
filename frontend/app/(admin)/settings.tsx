@@ -26,7 +26,7 @@ export default function AdminSettingsScreen() {
           style: 'destructive', 
           onPress: async () => {
             await signOut();
-            router.replace('/');
+            // Navigation is handled automatically by AuthContext
           }
         }
       ]
