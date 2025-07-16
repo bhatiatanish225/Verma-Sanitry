@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { User, MapPin, CreditCard, Bell, CircleHelp as HelpCircle, Shield, LogOut, ChevronRight, CreditCard as Edit } from 'lucide-react-native';
+import { User, MapPin, CreditCard, Bell, CircleHelp as HelpCircle, Shield, LogOut, ChevronRight, CreditCard as Edit, AlertCircle } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProfileScreen() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isLoading } = useAuth();
+  const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -151,9 +153,19 @@ export default function ProfileScreen() {
         {/* Logout */}
         <View style={styles.section}>
           <View style={styles.sectionContent}>
+            {/* Message Display */}
+            {message && (
+              <View style={[styles.messageBox, message.type === 'error' ? styles.errorBox : styles.successBox]}>
+                <AlertCircle size={20} color={message.type === 'error' ? '#631e25' : '#0f5132'} />
+                <Text style={[styles.messageText, message.type === 'error' ? styles.errorTextMsg : styles.successTextMsg]}>
+                  {message.text}
+                </Text>
+              </View>
+            )}
             <TouchableOpacity
-              style={[styles.menuItem, styles.logoutItem]}
+              style={[styles.menuItem, styles.logoutItem, isSigningOut && { opacity: 0.6 }]}
               onPress={handleLogout}
+              disabled={isSigningOut}
             >
               <View style={styles.menuItemLeft}>
                 <View style={[styles.menuIcon, styles.logoutIcon]}>
@@ -161,6 +173,7 @@ export default function ProfileScreen() {
                 </View>
                 <View style={styles.menuText}>
                   <Text style={[styles.menuTitle, styles.logoutText]}>Sign Out</Text>
+                  {isSigningOut && <ActivityIndicator size="small" color="#631e25" style={{ marginLeft: 8 }} />}
                 </View>
               </View>
             </TouchableOpacity>
@@ -324,6 +337,34 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: '#631e25',
+  },
+  messageBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+  },
+  errorBox: {
+    backgroundColor: 'rgba(99, 30, 37, 0.1)',
+    borderColor: 'rgba(99, 30, 37, 0.3)',
+  },
+  successBox: {
+    backgroundColor: 'rgba(15, 81, 50, 0.1)',
+    borderColor: 'rgba(15, 81, 50, 0.3)',
+  },
+  messageText: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+  },
+  errorTextMsg: {
+    color: '#631e25',
+  },
+  successTextMsg: {
+    color: '#0f5132',
   },
   footer: {
     alignItems: 'center',

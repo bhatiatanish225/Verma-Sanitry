@@ -9,10 +9,11 @@ import {
   Platform,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { ArrowLeft, Eye, EyeOff, Mail, Lock, Zap } from 'lucide-react-native';
+import { ArrowLeft, Eye, EyeOff, Mail, Lock, Zap, AlertCircle } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginScreen() {
@@ -20,6 +21,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
   const { signIn, isLoading } = useAuth();
 
   const validateForm = () => {
@@ -43,19 +45,25 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!validateForm()) return;
+    setMessage(null);
 
     const { error } = await signIn(email, password);
     
     if (error) {
-      Alert.alert('Login Failed', error.message || 'Invalid email or password. Please try again.');
+      const errorMessage = error.message || 'An unexpected error occurred.';
+      if (errorMessage.includes('Invalid login credentials')) {
+        setMessage({ type: 'error', text: 'Incorrect email or password. Please try again.' });
+      } else {
+        setMessage({ type: 'error', text: 'Login failed. Please check your connection and try again.' });
+      }
     }
     // Navigation is handled automatically by the auth context
   };
 
   const fillDemoCredentials = (type: 'admin' | 'user') => {
     if (type === 'admin') {
-      setEmail('admin@aquashop.com');
-      setPassword('password123');
+      setEmail('admin@vermaandco.com');
+      setPassword('admin123');
     } else {
       setEmail('john.doe@example.com');
       setPassword('password123');
@@ -87,6 +95,15 @@ export default function LoginScreen() {
               </View>
 
               <View style={styles.formContainer}>
+                {/* Message Display */}
+                {message && (
+                  <View style={[styles.messageBox, message.type === 'error' ? styles.errorBox : styles.successBox]}>
+                    <AlertCircle size={20} color={message.type === 'error' ? '#631e25' : '#0f5132'} />
+                    <Text style={[styles.messageText, message.type === 'error' ? styles.errorTextMsg : styles.successTextMsg]}>
+                      {message.text}
+                    </Text>
+                  </View>
+                )}
                 {/* Email Input */}
                 <View style={styles.inputContainer}>
                   <View style={[styles.inputWrapper, errors.email && styles.inputError]}>
@@ -99,6 +116,7 @@ export default function LoginScreen() {
                       onChangeText={(text) => {
                         setEmail(text);
                         if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
+                        if (message) setMessage(null);
                       }}
                       keyboardType="email-address"
                       autoCapitalize="none"
@@ -120,6 +138,7 @@ export default function LoginScreen() {
                       onChangeText={(text) => {
                         setPassword(text);
                         if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
+                        if (message) setMessage(null);
                       }}
                       secureTextEntry={!showPassword}
                       autoComplete="password"
@@ -288,6 +307,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: '#631e25',
+  },
+  messageBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+  },
+  errorBox: {
+    backgroundColor: 'rgba(99, 30, 37, 0.1)',
+    borderColor: 'rgba(99, 30, 37, 0.3)',
+  },
+  successBox: {
+    backgroundColor: 'rgba(15, 81, 50, 0.1)',
+    borderColor: 'rgba(15, 81, 50, 0.3)',
+  },
+  messageText: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+  },
+  errorTextMsg: {
+    color: '#631e25',
+  },
+  successTextMsg: {
+    color: '#0f5132',
   },
   forgotPassword: {
     alignSelf: 'flex-end',

@@ -194,10 +194,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setIsLoading(true);
-      await authService.logout();
+      // Always clear user state and token, regardless of API call result
       setUser(null);
+      await authService.logout();
     } catch (error) {
       console.error('Error signing out:', error);
+      // Even if logout API fails, we still want to clear the user state
+      setUser(null);
     } finally {
       setIsLoading(false);
     }

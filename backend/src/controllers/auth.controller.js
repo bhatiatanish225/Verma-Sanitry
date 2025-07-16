@@ -17,13 +17,14 @@ const generateOTP = () => {
 
 // Helper function to send email (if configured)
 const sendEmail = async (to, subject, htmlContent) => {
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('Development mode: Email sending skipped');
+  // Check if email credentials are configured
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log('Email credentials not configured, skipping email sending');
     return;
   }
 
   try {
-    const transporter = nodemailer.createTransport({
+    const transporter = nodemailer.createTransporter({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
@@ -39,7 +40,7 @@ const sendEmail = async (to, subject, htmlContent) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`Email sent to ${to}`);
+    console.log(`Email sent successfully to ${to}`);
   } catch (error) {
     console.error('Email sending error:', error);
     throw error;
@@ -79,8 +80,8 @@ exports.signupStep1 = async (req, res) => {
 
     await redis.setEx(`signup:${email}`, 3600, JSON.stringify(signupData)); // 1 hour expiry
 
-    // Send OTP via email (in production)
-    if (process.env.NODE_ENV === 'production') {
+    // Always try to send OTP via email if credentials are configured
+    try {
       await sendEmail(
         email,
         'Your Verification Code - Verma and Company.',
@@ -96,17 +97,12 @@ exports.signupStep1 = async (req, res) => {
         </div>
         `
       );
+      res.json({ message: 'OTP sent to your email' });
+    } catch (error) {
+      // If email sending fails, still return success but log the error
+      console.error('Failed to send OTP email:', error);
+      res.json({ message: 'OTP generated. Please check your email or contact support if not received.' });
     }
-
-    // FOR DEVELOPMENT: Return the code directly
-    if (process.env.NODE_ENV !== 'production') {
-      return res.json({ 
-        message: 'OTP sent successfully (DEV MODE)', 
-        code: otp
-      });
-    }
-
-    res.json({ message: 'OTP sent to your email' });
   } catch (error) {
     console.error('Signup Step 1 error:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -246,48 +242,28 @@ exports.sendVerificationCode = async (req, res) => {
     const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
     otpStorage.set(email, { code, expiresAt });
 
-    // FOR DEVELOPMENT: Return the code directly in response for testing
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Development mode: Returning code directly');
-      return res.json({ 
-        message: 'Verification code generated (DEV MODE)', 
-        code: code // Include code in response for testing
-      });
-    }
-
-    // FOR PRODUCTION: Send email
+    // Always try to send OTP via email if credentials are configured
     try {
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-        }
-      });
-
-      const mailOptions = {
-        from: `Verma and Company. <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: 'Your Verification Code - Verma and Company.',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #0066CC;">Email Verification</h2>
-            <p>Your verification code is:</p>
-            <div style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; color: #0066CC;">
-              ${code}
-            </div>
-            <p>This code will expire in 10 minutes.</p>
-            <p>If you didn't request this code, please ignore this email.</p>
-          </div>
+      await sendEmail(
+        email,
+        'Your Verification Code - Verma and Company.',
         `
-      };
-
-      await transporter.sendMail(mailOptions);
-      console.log(`Verification email sent to ${email}`);
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0066CC;">Email Verification</h2>
+          <p>Your verification code is:</p>
+          <div style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; color: #0066CC;">
+            ${code}
+          </div>
+          <p>This code will expire in 10 minutes.</p>
+          <p>If you didn't request this code, please ignore this email.</p>
+        </div>
+        `
+      );
       res.json({ message: 'Verification code sent to your email' });
     } catch (error) {
-      console.error('Email error:', error);
-      res.status(500).json({ message: 'Failed to send verification email' });
+      // If email sending fails, still return success but log the error
+      console.error('Failed to send verification email:', error);
+      res.json({ message: 'Verification code generated. Please check your email or contact support if not received.' });
     }
   } catch (error) {
     console.error('Send verification code error:', error);

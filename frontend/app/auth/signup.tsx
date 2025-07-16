@@ -8,12 +8,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { ArrowLeft, Eye, EyeOff, Mail, Lock, User, Phone, MapPin, Shield, CircleCheck as CheckCircle } from 'lucide-react-native';
+import { ArrowLeft, Eye, EyeOff, Mail, Lock, User, Phone, MapPin, Shield, CircleCheck as CheckCircle, AlertCircle } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 
 const CITIES = [
@@ -37,7 +37,6 @@ export default function SignupScreen() {
   
   // Step 2 data
   const [otp, setOtp] = useState('');
-  const [generatedOTP, setGeneratedOTP] = useState<string | null>(null);
   
   // Step 3 data
   const [step3Data, setStep3Data] = useState({
@@ -51,6 +50,7 @@ export default function SignupScreen() {
   const [showCityModal, setShowCityModal] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
 
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {};
@@ -113,19 +113,23 @@ export default function SignupScreen() {
 
   const handleStep1Submit = async () => {
     if (!validateStep1()) return;
-
+    setMessage(null);
     setIsLoading(true);
     try {
-      const { error, code } = await signupStep1(step1Data);
+      const { error } = await signupStep1(step1Data);
       if (error) {
-        Alert.alert('Error', error.message || 'Failed to send OTP');
+        const errorMessage = error.message || 'An unexpected error occurred.';
+        if (errorMessage.includes('User already registered')) {
+          setMessage({ type: 'error', text: 'This email is already registered. Please log in.' });
+        } else {
+          setMessage({ type: 'error', text: 'Failed to send OTP. Please try again.' });
+        }
       } else {
-        setGeneratedOTP(code || null);
         setCurrentStep(2);
-        Alert.alert('OTP Sent', 'Please check your email for the 6-digit verification code.' + (code ? ` (Dev: ${code})` : ''));
+        setMessage({ type: 'success', text: 'OTP sent! Check your email for the 6-digit code.' });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to send OTP. Please try again.');
+      setMessage({ type: 'error', text: 'An unexpected error occurred. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -133,18 +137,18 @@ export default function SignupScreen() {
 
   const handleStep2Submit = async () => {
     if (!validateStep2()) return;
-
+    setMessage(null);
     setIsLoading(true);
     try {
       const { error } = await signupStep2(step1Data.email, otp);
       if (error) {
-        Alert.alert('Error', error.message || 'Invalid OTP');
+        setMessage({ type: 'error', text: error.message || 'Invalid OTP. Please try again.' });
       } else {
         setCurrentStep(3);
-        Alert.alert('Success', 'Email verified successfully!');
+        setMessage({ type: 'success', text: 'Email verified successfully! Please complete the final step.' });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to verify OTP. Please try again.');
+      setMessage({ type: 'error', text: 'Failed to verify OTP. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -163,23 +167,14 @@ export default function SignupScreen() {
       
       if (error) {
         console.error('Signup failed:', error);
-        Alert.alert('Signup Failed', error.message || 'Something went wrong. Please try again.');
+        setMessage({ type: 'error', text: error.message || 'Something went wrong. Please try again.' });
       } else {
-        Alert.alert(
-          'Success', 
-          'Account created successfully! Welcome to Verma and Company.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Navigation will be handled by the auth context
-              }
-            }
-          ]
-        );
+        // Success message can be shown on the login screen after redirect
+        // or handled by the auth context globally.
+        // Navigation is handled by the auth context
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to create account. Please try again.');
+      setMessage({ type: 'error', text: 'Failed to create account. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -191,6 +186,7 @@ export default function SignupScreen() {
       delete newErrors[field];
       setErrors(newErrors);
     }
+    if (message) setMessage(null);
   };
 
   const formatPhoneNumber = (text: string) => {
@@ -215,6 +211,14 @@ export default function SignupScreen() {
 
   const renderStep1 = () => (
     <View style={styles.formContainer}>
+      {message && (
+        <View style={[styles.messageBox, message.type === 'error' ? styles.errorBox : styles.successBox]}>
+          <AlertCircle size={20} color={message.type === 'error' ? '#631e25' : '#0f5132'} />
+          <Text style={[styles.messageText, message.type === 'error' ? styles.errorTextMsg : styles.successTextMsg]}>
+            {message.text}
+          </Text>
+        </View>
+      )}
       <View style={styles.stepIndicator}>
         <Text style={styles.stepText}>Step 1 of 3</Text>
         <Text style={styles.stepTitle}>Basic Information</Text>
@@ -330,11 +334,6 @@ export default function SignupScreen() {
           />
         </View>
         {errors.otp && <Text style={styles.errorText}>{errors.otp}</Text>}
-        {generatedOTP && (
-          <Text style={styles.otpHint}>
-            Demo: Use code {generatedOTP}
-          </Text>
-        )}
       </View>
 
       <TouchableOpacity
@@ -352,7 +351,6 @@ export default function SignupScreen() {
         onPress={() => {
           setCurrentStep(1);
           setOtp('');
-          setGeneratedOTP(null);
         }}
       >
         <Text style={styles.resendButtonText}>Resend OTP</Text>

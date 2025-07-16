@@ -149,9 +149,16 @@ export const authService = {
   },
 
   async logout(): Promise<ApiResponse<null>> {
-    // Clear token from storage when logging out
-    await removeToken();
-    return formatResponse<null>(api.post('/api/auth/logout'));
+    try {
+      // Clear token from storage when logging out
+      await removeToken();
+      // Try to notify the server about logout (optional)
+      return formatResponse<null>(api.post('/api/auth/logout'));
+    } catch (error) {
+      // Even if server call fails, token is already removed
+      console.log('Logout API call failed, but token was cleared locally');
+      return { success: true, data: null };
+    }
   },
 
   async resetPassword(email: string): Promise<ApiResponse<null>> {
