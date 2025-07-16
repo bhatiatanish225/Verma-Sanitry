@@ -18,11 +18,14 @@ dotenv.config();
 const prisma = new PrismaClient();
 const app = express();
 
-// 🔐 Middleware
+
+const cors = require('cors');
+
 app.use(cors({
-  origin: 'http://localhost:8081', // ✅ allow requests from this origin
-  credentials: true,
+  origin: '*', // open to all origins (useful for mobile apps)
+  credentials: true
 }));
+
 
 app.options('*', cors()); // Enable pre-flight for all routes
 app.use(express.json()); // Required to read req.body

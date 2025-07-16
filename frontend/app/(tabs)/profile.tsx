@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, MapPin, CreditCard, Bell, CircleHelp as HelpCircle, Shield, LogOut, ChevronRight, CreditCard as Edit, AlertCircle } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,8 +28,22 @@ export default function ProfileScreen() {
           text: 'Sign Out', 
           style: 'destructive', 
           onPress: async () => {
-            await signOut();
-            // Navigation is handled automatically by AuthContext
+            try {
+              setIsSigningOut(true);
+              setMessage(null);
+              // Force token removal and state reset
+              await AsyncStorage.removeItem('token');
+              await signOut();
+              // Navigation is handled automatically by AuthContext
+            } catch (error) {
+              console.error('Error during sign out:', error);
+              setMessage({ 
+                type: 'error', 
+                text: 'Failed to sign out. Please try again.' 
+              });
+            } finally {
+              setIsSigningOut(false);
+            }
           }
         }
       ]
