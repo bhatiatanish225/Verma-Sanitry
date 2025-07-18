@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { User, Category, Product, Order, AuthResponse, ApiResponse, PaginatedResponse } from '@/types/api';
 
 // Create axios instance with base URL and default headers
@@ -8,9 +9,16 @@ const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:5001';
 // Determine if we're running in a web browser
 const isWeb = typeof window !== 'undefined' && window.location;
 
-// If running in web browser, ensure we use the correct localhost URL
-const baseURL = isWeb 
-  ? `${window.location.protocol}//${window.location.hostname}:5001`
+// Determine the correct base URL based on platform
+let baseURL: string;
+if (Platform.OS === 'web' && isWeb) {
+  baseURL = `${window.location.protocol}//${window.location.hostname}:5001`;
+} else if (__DEV__) {
+  // Development mode for mobile
+  baseURL = Platform.OS === 'android' ? 'http://10.0.2.2:5001' : 'http://localhost:5001';
+} else {
+  baseURL = process.env.EXPO_PUBLIC_API_URL || API_BASE_URL;
+}
   : API_BASE_URL;
 
 const api = axios.create({
@@ -58,7 +66,7 @@ function formatResponse<T>(promise: Promise<any>): Promise<ApiResponse<T>> {
   return promise
     .then(response => ({
       success: true,
-      data: response.data,
+      data: response.data.data || response.data,
       message: response.data.message ?? ''
     }))
     .catch(error => ({
@@ -222,7 +230,7 @@ export const productService = {
     return api.get(url)
       .then(response => ({
         success: true,
-        data: response.data.products,
+        data: response.data.data || response.data.products || response.data,
         pagination: {
           page: response.data.page,
           limit: response.data.limit,
@@ -232,7 +240,7 @@ export const productService = {
       }))
       .catch(error => ({
         success: false,
-        error: error.response?.data?.message || error.message,
+        error: error.response?.data?.message || error.response?.data?.error || error.message,
         data: [],
         pagination: {
           page: 1,
@@ -280,8 +288,7 @@ export const orderService = {
   },
 
   async getOrderById(id: string): Promise<ApiResponse<Order>> {
-    // This endpoint might need to be adjusted based on backend implementation
-    return formatResponse<Order>(api.get(`/api/orders/${id}`));
+    return formatResponse<Order>(api.get(`/api/orders/me`));
   },
 
   async createOrder(orderData: {
@@ -298,8 +305,7 @@ export const orderService = {
   },
 
   async updateOrderStatus(id: string, status: string): Promise<ApiResponse<Order>> {
-    // This endpoint might need to be adjusted based on backend implementation
-    return formatResponse<Order>(api.put(`/api/orders/${id}/status`, { status }));
+    return formatResponse<Order>(api.put(`/api/admin/orders/${id}/status`, { status }));
   }
 };
 

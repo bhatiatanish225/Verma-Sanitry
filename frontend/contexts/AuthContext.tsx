@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '@/types/api';
 import { authService } from '@/services/api';
 import { router } from 'expo-router';
+import { Platform } from 'react-native';
 
 interface AuthContextType {
   user: User | null;
@@ -38,14 +39,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoading) {
       if (user) {
-      if (user.role === 'admin') {
-        router.replace('/(admin)');
-      } else {
-        router.replace('/(tabs)');
-        }
+        // Use setTimeout to ensure navigation happens after component mount
+        setTimeout(() => {
+          if (user.role === 'admin') {
+            router.replace('/(admin)');
+          } else {
+            router.replace('/(tabs)');
+          }
+        }, 100);
       } else {
         // User is null (logged out), navigate to welcome screen
-        router.replace('/');
+        setTimeout(() => {
+          router.replace('/');
+        }, 100);
       }
     }
   }, [user, isLoading]);
@@ -134,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(response.data.user);
         return { error: null };
       } else {
-        return { error: { message: response.error } };
+        return { error: { message: response.error || 'Registration failed' } };
       }
     } catch (error) {
       return { error };
@@ -164,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(response.data.user);
         return { error: null };
       } else {
-        return { error: { message: response.error } };
+        return { error: { message: response.error || 'Registration failed' } };
       }
     } catch (error) {
       return { error };
@@ -182,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(response.data.user);
         return { error: null };
       } else {
-        return { error: { message: response.error } };
+        return { error: { message: response.error || 'Login failed' } };
       }
     } catch (error) {
       return { error };
@@ -212,7 +218,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.success) {
         return { error: null };
       } else {
-        return { error: { message: response.error } };
+        return { error: { message: response.error || 'Password reset failed' } };
       }
     } catch (error) {
       return { error };

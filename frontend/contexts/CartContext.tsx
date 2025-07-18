@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { cartService } from '@/services/api';
 import { useAuth } from './AuthContext';
+import { Alert } from 'react-native';
 
 export interface CartItem {
   id: string;
@@ -44,7 +45,7 @@ export function CartProvider({ children }: { readonly children: React.ReactNode 
       const response = await cartService.getCart();
       if (response.success && response.data) {
         // Map API cart items to our CartItem format
-        const cartItems = response.data.items.map(item => ({
+        const cartItems = (response.data.items || []).map((item: any) => ({
           id: item.productId ?? item.id,
           name: item.product.name,
           price: item.product.price,
@@ -54,6 +55,8 @@ export function CartProvider({ children }: { readonly children: React.ReactNode 
         }));
         setItems(cartItems);
       }
+    } catch (error: any) {
+      console.error('Error fetching cart items:', error);
     } catch (error) {
       console.error('Error fetching cart items:', error);
     } finally {
@@ -64,6 +67,7 @@ export function CartProvider({ children }: { readonly children: React.ReactNode 
   const addToCart = async (product: Omit<CartItem, 'quantity'>) => {
     if (!user) {
       console.warn('User must be logged in to add items to cart');
+      Alert.alert('Login Required', 'Please login to add items to cart');
       return;
     }
 
@@ -79,8 +83,12 @@ export function CartProvider({ children }: { readonly children: React.ReactNode 
       const response = await cartService.addToCart(product.id, quantity);
       if (response.success) {
         // Update local state
-        await fetchCartItems(); // Refresh cart from API
+        await fetchCartItems();
+        Alert.alert('Success', 'Item added to cart');
       }
+    } catch (error: any) {
+      console.error('Error adding item to cart:', error);
+      Alert.alert('Error', 'Failed to add item to cart');
     } catch (error) {
       console.error('Error adding item to cart:', error);
     } finally {
@@ -91,6 +99,7 @@ export function CartProvider({ children }: { readonly children: React.ReactNode 
   const removeFromCart = async (id: string) => {
     if (!user) {
       console.warn('User must be logged in to remove items from cart');
+      Alert.alert('Login Required', 'Please login to manage cart');
       return;
     }
     
@@ -102,6 +111,9 @@ export function CartProvider({ children }: { readonly children: React.ReactNode 
         setItems(prevItems => prevItems.filter(item => item.id !== id));
       }
     } catch (error) {
+    } catch (error: any) {
+      console.error('Error removing item from cart:', error);
+      Alert.alert('Error', 'Failed to remove item from cart');
       console.error('Error removing item from cart:', error);
     } finally {
       setIsLoading(false);
@@ -111,6 +123,7 @@ export function CartProvider({ children }: { readonly children: React.ReactNode 
   const updateQuantity = async (id: string, quantity: number) => {
     if (!user) {
       console.warn('User must be logged in to update cart');
+      Alert.alert('Login Required', 'Please login to manage cart');
       return;
     }
     
@@ -144,6 +157,9 @@ export function CartProvider({ children }: { readonly children: React.ReactNode 
           )
         );
       }
+    } catch (error: any) {
+      console.error('Error updating cart item quantity:', error);
+      Alert.alert('Error', 'Failed to update quantity');
     } catch (error) {
       console.error('Error updating cart item quantity:', error);
     } finally {
@@ -154,6 +170,7 @@ export function CartProvider({ children }: { readonly children: React.ReactNode 
   const clearCart = async () => {
     if (!user) {
       console.warn('User must be logged in to clear cart');
+      Alert.alert('Login Required', 'Please login to manage cart');
       return;
     }
     
@@ -165,6 +182,9 @@ export function CartProvider({ children }: { readonly children: React.ReactNode 
       }
       setItems([]);
     } catch (error) {
+    } catch (error: any) {
+      console.error('Error clearing cart:', error);
+      Alert.alert('Error', 'Failed to clear cart');
       console.error('Error clearing cart:', error);
     } finally {
       setIsLoading(false);
