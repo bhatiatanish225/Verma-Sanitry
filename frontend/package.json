@@ -33,6 +33,7 @@
     "expo-web-browser": "~14.1.5",
     "lucide-react-native": "^0.475.0",
     "metro": "0.76.8",
+    "metro-transform-worker": "^0.76.8",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.73.7",
@@ -50,5 +51,13 @@
     "@types/react": "~19.0.10",
     "babel-plugin-module-resolver": "^5.0.0",
     "typescript": "~5.8.3"
+  },
+  "resolutions": {
+    "metro": "0.76.8",
+    "metro-config": "0.76.8",
+    "metro-core": "0.76.8",
+    "metro-runtime": "0.76.8",
+    "metro-source-map": "0.76.8",
+    "metro-transform-worker": "0.76.8"
   }
 }
