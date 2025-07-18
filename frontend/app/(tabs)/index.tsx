@@ -9,6 +9,7 @@ import {
   FlatList,
   Dimensions,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -52,7 +53,7 @@ export default function HomeScreen() {
       if (bestsellerResponse.success) {
         setBestSellerProducts(bestsellerResponse.data || []);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching data:', error);
     } finally {
       setIsLoading(false);
@@ -122,11 +123,11 @@ export default function HomeScreen() {
           onPress={(e) => {
             e.stopPropagation();
             addToCart({
-              id: item.id,
+              id: item.id.toString(),
               name: item.name,
               price: item.price,
-              image_url: item.image_url,
-              maxQuantity: item.stock_quantity
+              image_url: item.image_url || item.imageUrl || '',
+              maxQuantity: item.stock_quantity || item.availableStock || 10
             });
           }}
         >
@@ -153,11 +154,11 @@ export default function HomeScreen() {
           onPress={(e) => {
             e.stopPropagation();
             addToCart({
-              id: item.id,
+              id: item.id.toString(),
               name: item.name,
               price: item.price,
-              image_url: item.image_url,
-              maxQuantity: item.stock_quantity
+              image_url: item.image_url || item.imageUrl || '',
+              maxQuantity: item.stock_quantity || item.availableStock || 10
             });
           }}
         >

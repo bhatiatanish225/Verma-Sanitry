@@ -10,6 +10,7 @@ import {
   TextInput,
   RefreshControl,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -45,7 +46,7 @@ export default function CategoriesScreen() {
       if (categoriesResponse.success) {
         setCategories(categoriesResponse.data || []);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching categories:', error);
     } finally {
       setIsLoading(false);
@@ -67,7 +68,7 @@ export default function CategoriesScreen() {
       if (productsResponse.success) {
         setProducts(productsResponse.data || []);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching products:', error);
     }
   };
@@ -117,11 +118,11 @@ export default function CategoriesScreen() {
             e.stopPropagation();
             if (item.stock_quantity > 0) {
               addToCart({
-                id: item.id,
+                id: item.id.toString(),
                 name: item.name,
                 price: item.price,
-                image_url: item.image_url,
-                maxQuantity: item.stock_quantity
+                image_url: item.image_url || item.imageUrl || '',
+                maxQuantity: item.stock_quantity || item.availableStock || 10
               });
             }
           }}
@@ -195,11 +196,11 @@ export default function CategoriesScreen() {
             e.stopPropagation();
             if (item.stock_quantity > 0) {
               addToCart({
-                id: item.id,
+                id: item.id.toString(),
                 name: item.name,
                 price: item.price,
-                image_url: item.image_url,
-                maxQuantity: item.stock_quantity
+                image_url: item.image_url || item.imageUrl || '',
+                maxQuantity: item.stock_quantity || item.availableStock || 10
               });
             }
           }}
@@ -214,7 +215,7 @@ export default function CategoriesScreen() {
   const renderCategoryGrid = ({ item }: { item: Category }) => (
     <TouchableOpacity 
       style={styles.categoryGridItem}
-      onPress={() => setSelectedCategory(item.id)}
+      onPress={() => setSelectedCategory(item.id.toString())}
     >
       <Image source={{ uri: item.image_url || 'https://images.pexels.com/photos/6585751/pexels-photo-6585751.jpeg?auto=compress&cs=tinysrgb&w=500' }} style={styles.categoryGridImage} />
       <View style={styles.categoryGridOverlay}>

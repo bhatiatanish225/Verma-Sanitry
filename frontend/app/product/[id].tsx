@@ -9,6 +9,7 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
+import { Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Star, Minus, Plus, ShoppingCart, Heart, Share2, Shield, Truck, RotateCcw } from 'lucide-react-native';
@@ -41,6 +42,8 @@ export default function ProductDetailScreen() {
       } else {
         Alert.alert('Error', 'Product not found');
       }
+    } catch (error: any) {
+      console.error('Error fetching product:', error);
     } catch (error) {
       console.error('Error fetching product:', error);
       Alert.alert('Error', 'Failed to load product details');
@@ -78,6 +81,12 @@ export default function ProductDetailScreen() {
   const handleAddToCart = () => {
     for (let i = 0; i < quantity; i++) {
       addToCart({
+        id: product.id.toString(),
+        name: product.name,
+        price: product.price,
+        image_url: product.image_url || product.imageUrl || '',
+        maxQuantity: product.stock_quantity || product.availableStock || 10
+      });
         id: product.id,
         name: product.name,
         price: product.price,
@@ -89,7 +98,7 @@ export default function ProductDetailScreen() {
   };
 
   const increaseQuantity = () => {
-    if (quantity < product.stock_quantity) {
+    if (quantity < (product.stock_quantity || product.availableStock || 10)) {
       setQuantity(quantity + 1);
     }
   };
@@ -134,7 +143,7 @@ export default function ProductDetailScreen() {
 
         {/* Product Images */}
         <View style={styles.imageContainer}>
-          <Image source={{ uri: product.image_url }} style={styles.productImage} />
+          <Image source={{ uri: product.image_url || product.imageUrl || '' }} style={styles.productImage} />
           {discountPercentage > 0 && (
             <View style={styles.discountBadge}>
               <Text style={styles.discountText}>{discountPercentage}% OFF</Text>
@@ -178,14 +187,14 @@ export default function ProductDetailScreen() {
             <View style={styles.stockIndicator}>
               <View style={[
                 styles.stockDot,
-                product.stock_quantity > 0 ? styles.inStockDot : styles.outOfStockDot
+                (product.stock_quantity || product.availableStock || 0) > 0 ? styles.inStockDot : styles.outOfStockDot
               ]} />
               <Text style={[
                 styles.stockText,
-                product.stock_quantity > 0 ? styles.inStock : styles.outOfStock
+                (product.stock_quantity || product.availableStock || 0) > 0 ? styles.inStock : styles.outOfStock
               ]}>
-                {product.stock_quantity > 0 
-                  ? `${product.stock_quantity} items available` 
+                {(product.stock_quantity || product.availableStock || 0) > 0 
+                  ? `${product.stock_quantity || product.availableStock} items available` 
                   : 'Out of Stock'
                 }
               </Text>
@@ -193,7 +202,7 @@ export default function ProductDetailScreen() {
           </View>
 
           {/* Quantity Selector */}
-          {product.stock_quantity > 0 && (
+          {(product.stock_quantity || product.availableStock || 0) > 0 && (
             <View style={styles.quantitySection}>
               <Text style={styles.quantityLabel}>Quantity:</Text>
               <View style={styles.quantityContainer}>
@@ -207,10 +216,11 @@ export default function ProductDetailScreen() {
                 <Text style={styles.quantity}>{quantity}</Text>
                 <TouchableOpacity
                   style={[styles.quantityButton, quantity >= product.stock_quantity && styles.quantityButtonDisabled]}
+                  style={[styles.quantityButton, quantity >= (product.stock_quantity || product.availableStock || 10) && styles.quantityButtonDisabled]}
                   onPress={increaseQuantity}
-                  disabled={quantity >= product.stock_quantity}
+                  disabled={quantity >= (product.stock_quantity || product.availableStock || 10)}
                 >
-                  <Plus size={18} color={quantity >= product.stock_quantity ? '#9b9591' : '#2e3f47'} />
+                  <Plus size={18} color={quantity >= (product.stock_quantity || product.availableStock || 10) ? '#9b9591' : '#2e3f47'} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -256,7 +266,7 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       {/* Add to Cart Button */}
-      {product.stock_quantity > 0 && (
+      {(product.stock_quantity || product.availableStock || 0) > 0 && (
         <View style={styles.footer}>
           <View style={styles.footerContent}>
             <View style={styles.totalPrice}>

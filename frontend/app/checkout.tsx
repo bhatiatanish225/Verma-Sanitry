@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
+import { Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, MapPin, CreditCard, Smartphone, Banknote } from 'lucide-react-native';
@@ -22,7 +23,7 @@ export default function CheckoutScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [address, setAddress] = useState({
     name: user?.full_name || 'John Doe',
-    phone: user?.phone || '+91 98765 43210',
+    phone: user?.phone || user?.phone || '+91 98765 43210',
     street: '123 Main Street',
     city: 'Mumbai',
     state: 'Maharashtra',
@@ -84,6 +85,8 @@ export default function CheckoutScreen() {
       } else {
         Alert.alert('Error', response.error || 'Failed to place order');
       }
+    } catch (error: any) {
+      console.error('Error placing order:', error);
     } catch (error) {
       console.error('Error placing order:', error);
       Alert.alert('Error', 'Failed to place order. Please try again.');
