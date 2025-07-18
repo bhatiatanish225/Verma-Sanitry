@@ -5,7 +5,6 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "predev": "node patches/fix-path-to-regexp.js",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "prisma": "prisma"

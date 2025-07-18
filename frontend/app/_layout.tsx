@@ -1,51 +1,48 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { useFrameworkReady } from '../hooks/useFrameworkReady';
+import { AuthProvider } from '../contexts/AuthContext';
+import { CartProvider } from '../contexts/CartContext';
+import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import { useFrameworkReady } from '@/hooks/useFrameworkReady';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { CartProvider } from '@/contexts/CartContext';
+import 'react-native-url-polyfill/auto';
 
+// Keep splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  useFrameworkReady();
-
-  const [fontsLoaded, fontError] = useFonts({
-    'Inter-Regular': Inter_400Regular,
-    'Inter-Medium': Inter_500Medium,
-    'Inter-SemiBold': Inter_600SemiBold,
-    'Inter-Bold': Inter_700Bold,
+  const [fontsLoaded] = useFonts({
+    'Inter-Regular': require('@expo-google-fonts/inter/Inter_400Regular.ttf'),
+    'Inter-Medium': require('@expo-google-fonts/inter/Inter_500Medium.ttf'),
+    'Inter-Bold': require('@expo-google-fonts/inter/Inter_700Bold.ttf'),
   });
 
+  const { ready } = useFrameworkReady();
+
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if (fontsLoaded && ready) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, ready]);
 
-  if (!fontsLoaded && !fontError) {
+  if (!fontsLoaded || !ready) {
     return null;
   }
 
   return (
     <AuthProvider>
       <CartProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="auth/login" />
-          <Stack.Screen name="auth/signup" />
-          <Stack.Screen name="auth/forgot-password" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="(admin)" />
-          <Stack.Screen name="product/[id]" />
-          <Stack.Screen name="checkout" />
-          <Stack.Screen name="order-success" />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="dark" />
+        <StatusBar style="auto" />
+        <Stack screenOptions={{ headerShown: false }} />
       </CartProvider>
     </AuthProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});

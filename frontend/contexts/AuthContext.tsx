@@ -38,10 +38,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoading) {
       if (user) {
-        if (user.role === 'admin') {
-          router.replace('/(admin)');
-        } else {
-          router.replace('/(tabs)');
+      if (user.role === 'admin') {
+        router.replace('/(admin)');
+      } else {
+        router.replace('/(tabs)');
         }
       } else {
         // User is null (logged out), navigate to welcome screen

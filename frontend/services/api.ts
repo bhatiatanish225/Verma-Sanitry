@@ -5,8 +5,16 @@ import { User, Category, Product, Order, AuthResponse, ApiResponse, PaginatedRes
 // Create axios instance with base URL and default headers
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:5001';
 
+// Determine if we're running in a web browser
+const isWeb = typeof window !== 'undefined' && window.location;
+
+// If running in web browser, ensure we use the correct localhost URL
+const baseURL = isWeb 
+  ? `${window.location.protocol}//${window.location.hostname}:5001`
+  : API_BASE_URL;
+
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
